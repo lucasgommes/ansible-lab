@@ -1,5 +1,8 @@
-[wordpress]
+[haproxy_last]
 192.168.40.154 ansible_user=lucas ansible_ssh_private_key_file='/home/lucas/.ssh/id_ed25519'
 
 [haproxy]
+192.168.122.34 ansible_user=lucas ansible_ssh_private_key_file='/home/lucas/.ssh/ubuntu_01'
+
+[wordpress]
 192.168.122.34 ansible_user=lucas ansible_ssh_private_key_file='/home/lucas/.ssh/ubuntu_01'
