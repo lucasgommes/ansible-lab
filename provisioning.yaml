@@ -1,8 +1,53 @@
 ---
-- hosts: haproxy
-  tasks:
-    - name: Install HAProxy
-      ansible.builtin.apt:
-        name: haproxy
-        state: present
+- hosts: wordpress
+
+  handlers:
+    - name: restart apache
+      ansible.builtin.service:
+        name: apache2
+        state: restarted
       become: yes
+        
+  tasks:
+  - name: Instalação de dependencias
+    ansible.builtin.apt:
+      pkg:
+      - apache2
+      - ghostscript
+      - libapache2-mod-php
+      - mysql-server
+      - php
+      - php-bcmath
+      - php-curl
+      - php-imagick
+      - php-intl
+      - php-json
+      - php-mbstring
+      - php-mysql
+      - php-xml
+      - php-zip
+      state: latest
+      update_cache: yes
+    become: yes
+
+  - name: Criando diretório e mudando permissões
+    ansible.builtin.file:
+      path: /srv/www
+      owner: www-data
+      group: www-data
+    become: yes
+
+  - name: Baixando e descompactando o WordPress
+    ansible.builtin.unarchive:
+      src: https://wordpress.org/latest.tar.gz
+      dest: /srv/www
+      remote_src: yes
+    become: yes
+
+  - name: Copiando arquivo de configuração do WordPress
+    ansible.builtin.copy:
+      src: files/wordpress.conf
+      dest: /etc/apache2/sites-available/000-default.conf
+    become: yes
+    notify:
+      - restart apache
