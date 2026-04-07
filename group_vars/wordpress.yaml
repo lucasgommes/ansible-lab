@@ -1,0 +1,4 @@
+---
+# O nome do arquivo deve ser o mesmo nome do grupo para o Ansible fazer a associação correta
+db_ip: "192.168.124.240"
+wp_dir: "/srv/www/wordpress/"

@@ -1,0 +1,6 @@
+---
+# O nome do arquivo deve ser o mesmo nome do grupo para o Ansible fazer a associação correta
+wp_db_name: "wordpress_db"
+wp_db_user: "wordpress_user"
+wp_db_pass: "12345"
+wp_ip: "192.168.122.35"
