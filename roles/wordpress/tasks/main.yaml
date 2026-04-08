@@ -1,0 +1,56 @@
+---
+  - name: Criando diretório e mudando permissões
+    ansible.builtin.file:
+      path: /srv/www
+      state: directory
+      owner: www-data
+      group: www-data
+    become: yes
+  - name: Baixando e descompactando o WordPress
+    ansible.builtin.unarchive:
+      src: https://wordpress.org/latest.tar.gz
+      dest: /srv/www
+      remote_src: yes
+    become: yes
+  - name: Copiando arquivo de configuração do WordPress
+    ansible.builtin.template:
+      src: templates/wordpress.conf.j2
+      dest: /etc/apache2/sites-available/000-default.conf
+    become: yes
+    notify:
+      - Restart Apache
+  - name: Copiando arquivo de configuração do banco de dados do WordPress
+    ansible.builtin.copy:
+      src: '{{ wp_dir }}wp-config-sample.php'
+      dest: '{{ wp_dir }}wp-config.php'
+      force: no # Não força a cópia se o a linha já existir, mas força a cópia se a linha existir e for diferente do conteúdo da variável 'line'
+      remote_src: yes
+    become: yes
+    notify:
+      - Restart MySQL
+  - name: Trocando as configurações do banco de dados no wp-config.php
+    ansible.builtin.replace:
+      path: '{{ wp_dir }}wp-config.php'
+      regexp: '{{ item.regexp }}'
+      replace: '{{ item.replace }}'
+    with_items:
+      - { regexp: 'database_name_here', replace: '{{ wp_db_name }}' }
+      - { regexp: 'username_here', replace: '{{ wp_db_user }}' }
+      - { regexp: 'password_here', replace: '{{ wp_db_pass }}' }
+      - { regexp: 'localhost', replace: '{{ db_ip}}' }
+    become: yes
+  - name: Trocando as chaves de autenticação e salts no wp-config.php
+    ansible.builtin.lineinfile:
+      path: '{{ wp_dir }}wp-config.php'
+      regexp: "{{ item.regexp }}"
+      line: "{{ item.line }}"
+    with_items:
+      - { regexp: "^define\\( 'AUTH_KEY'",         line: "define('AUTH_KEY',         'iyO`~|iCw.vm(sw~rvSrkLMHNFx6%x%N%2G@V[N.HM^`y!G(RE6;16FK+Q{Hem%T');"}
+      - { regexp: "^define\\( 'SECURE_AUTH_KEY'",  line: "define('SECURE_AUTH_KEY',  'LZ0;EGO9M9Ylvx{em3~OFun[$/&#_XREbH-AJaLUTVE$yz~t5k## ZvT4mV8jY8o');"}
+      - { regexp: "^define\\( 'LOGGED_IN_KEY'",    line: "define('LOGGED_IN_KEY',    '}@lcb!+,v16$uf~~C*pn8qIgnmzat-|+j1$1Ze+Q(z|=I]utMJ1|mUh[4jn$r`S8');"}
+      - { regexp: "^define\\( 'NONCE_KEY'",        line: "define('NONCE_KEY',        '->0VD+@zdA:0u63r?0KLy5rYI4+M<6/jJ~PY6RmVx#H+Z|:cb7aUU`[-L/f54jT]');"}
+      - { regexp: "^define\\( 'AUTH_SALT'",        line: "define('AUTH_SALT',        '(u+oF`m/b2LW7.e<Wd,,[;-z[T=Mc=AsEKaw(a|}@Z-(SO41mW>E+4=YfshPihes');"}
+      - { regexp: "^define\\( 'SECURE_AUTH_SALT'", line: "define('SECURE_AUTH_SALT', 'A>{8,KF@/Oa]o[dq&uJ0ob.xP`Fd-.|eUkDNs^8@L5Wq5o@;z#tg}6R8OVG8+WUh');"}
+      - { regexp: "^define\\( 'LOGGED_IN_SALT'",   line: "define('LOGGED_IN_SALT',   'cS1]3zy(vw.UF8wigF3JZ0 C&DPhXz=gFzywtz1/:5})70hdZ+I0a-|.m<TvA1)x');"}
+      - { regexp: "^define\\( 'NONCE_SALT'",       line: "define('NONCE_SALT',       '(,UPeu>rS9Wl]-Qoza>F&4yRI%BkC5SSJUC~r}P?9B43foY:Xw:P:yTopq`_O- i');"}
+    become: yes
